@@ -87,10 +87,10 @@ A função implementa logs estruturados em formato JSON, incluindo:
 - pikepdf
 
 ### Implantação
-1. Empacote o código e suas dependências
+1. Empacote o código e suas dependências (recomendável utilizar um camada/layer com as dependências para melhor modularidade)
 2. Implante na AWS Lambda
-3. Configure a memória recomendada (128MB mínimo)
-4. Defina o timeout adequado (30 segundos recomendado)
+3. Configure a memória recomendada (128MB, no mínimo)
+4. Defina o timeout adequado (10 segundos, no mínimo)
 5. Configure um trigger do API Gateway
 
 ## 🔒 Segurança
@@ -99,7 +99,3 @@ A função implementa logs estruturados em formato JSON, incluindo:
 - Não há armazenamento permanente de dados
 - Todo processamento ocorre na memória da função Lambda
 - Logs estruturados para auditoria e monitoramento
-
-## 📄 Licença
-
-MIT
