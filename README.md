@@ -1,6 +1,6 @@
 # 🔓 RemoverSenhaPDF - AWS Lambda 📄
 
-Esta função Lambda permite remover senhas de arquivos PDF criptografados de forma rápida e segura. O serviço recebe um arquivo PDF codificado em base64 e sua senha, retornando o mesmo PDF livre de proteção.
+Esta função no AWS Lambda permite remover senhas de arquivos PDF criptografados de forma rápida e segura. O serviço recebe um arquivo PDF codificado em base64 e sua senha, retornando o mesmo PDF livre de proteção.
 
 ## ✨ O Que o Código Faz
 
