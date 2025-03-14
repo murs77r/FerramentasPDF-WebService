@@ -161,9 +161,9 @@ def create_response(status_code, body):
         'statusCode': status_code,
         'headers': {
             'Content-Type': CONFIG['CONTENT_TYPE'],
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Content-Type,Authorization",
-            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT,DELETE"
+            "Access-Control-Allow-Origin": "https://pdf.class-one.com.br/",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization"
         },
         'body': json.dumps(body)
     }
