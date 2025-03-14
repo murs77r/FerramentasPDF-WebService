@@ -14,9 +14,7 @@ logger.setLevel(logging.INFO)
 
 CONFIG = {
     'MAX_PDF_SIZE_MB': float(os.environ.get('MAX_PDF_SIZE_MB', '3.0')),
-    'CORS_ORIGIN': os.environ.get('CORS_ORIGIN', '*'),
-    'CONTENT_TYPE': 'application/json',
-    'ALLOWED_METHODS': 'POST, OPTIONS'
+    'CONTENT_TYPE': 'application/json'
 }
 
 @contextmanager
@@ -162,10 +160,7 @@ def create_response(status_code, body):
     return {
         'statusCode': status_code,
         'headers': {
-            'Content-Type': CONFIG['CONTENT_TYPE'],
-            'Access-Control-Allow-Origin': CONFIG['CORS_ORIGIN'],
-            'Access-Control-Allow-Methods': CONFIG['ALLOWED_METHODS'],
-            'Access-Control-Allow-Headers': 'Content-Type'
+            'Content-Type': CONFIG['CONTENT_TYPE']
         },
         'body': json.dumps(body)
     }
