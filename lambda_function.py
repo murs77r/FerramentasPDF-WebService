@@ -161,9 +161,9 @@ def create_response(status_code, body):
         'statusCode': status_code,
         'headers': {
             'Content-Type': CONFIG['CONTENT_TYPE'],
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST',
-            'Access-Control-Allow-Headers': 'Content-Type'
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type,Authorization",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT,DELETE"
         },
         'body': json.dumps(body)
     }
