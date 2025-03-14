@@ -41,7 +41,18 @@ def lambda_handler(event, context):
             'message': 'Requisição OPTIONS recebida (preflight CORS)',
             'request_id': request_id
         }))
-        return create_response(200, {})
+        # Resposta específica para preflight com todos os cabeçalhos CORS necessários
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST',
+                'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-Requested-With,Accept',
+                'Access-Control-Allow-Credentials': 'true',
+                'Access-Control-Max-Age': '86400'
+            },
+            'body': ''
+        }
     
     try:
         if event.get('httpMethod') != 'POST':
@@ -169,10 +180,11 @@ def create_response(status_code, body):
         'statusCode': status_code,
         'headers': {
             'Content-Type': CONFIG['CONTENT_TYPE'],
-            'Access-Control-Allow-Origin': '*',  # Permite acesso de qualquer origem
-            'Access-Control-Allow-Methods': 'OPTIONS,POST',  # Métodos permitidos
-            'Access-Control-Allow-Headers': 'Content-Type,Authorization', # Cabeçalhos permitidos
-            'Access-Control-Allow-Credentials': 'true',  # Permite credenciais
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST',
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-Requested-With,Accept',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Max-Age': '86400'
         },
         'body': json.dumps(body)
     }
