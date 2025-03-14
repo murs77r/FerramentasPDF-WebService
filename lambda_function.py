@@ -160,7 +160,10 @@ def create_response(status_code, body):
     return {
         'statusCode': status_code,
         'headers': {
-            'Content-Type': CONFIG['CONTENT_TYPE']
+            'Content-Type': CONFIG['CONTENT_TYPE'],
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST',
+            'Access-Control-Allow-Headers': 'Content-Type'
         },
         'body': json.dumps(body)
     }
