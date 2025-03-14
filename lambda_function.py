@@ -35,6 +35,14 @@ def lambda_handler(event, context):
         'http_method': event.get('httpMethod')
     }))
     
+    # Tratar requisições OPTIONS para CORS preflight
+    if event.get('httpMethod') == 'OPTIONS':
+        logger.info(json.dumps({
+            'message': 'Requisição OPTIONS recebida (preflight CORS)',
+            'request_id': request_id
+        }))
+        return create_response(200, {})
+    
     try:
         if event.get('httpMethod') != 'POST':
             logger.warning(json.dumps({
@@ -161,6 +169,10 @@ def create_response(status_code, body):
         'statusCode': status_code,
         'headers': {
             'Content-Type': CONFIG['CONTENT_TYPE'],
+            'Access-Control-Allow-Origin': '*',  # Permite acesso de qualquer origem
+            'Access-Control-Allow-Methods': 'OPTIONS,POST',  # Métodos permitidos
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization', # Cabeçalhos permitidos
+            'Access-Control-Allow-Credentials': 'true',  # Permite credenciais
         },
         'body': json.dumps(body)
     }
