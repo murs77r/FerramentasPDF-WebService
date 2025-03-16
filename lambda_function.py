@@ -29,22 +29,50 @@ def lambda_handler(event, context):
     request_id = str(uuid.uuid4())
     start_time = time.time()
     
-    # Configuração inicial para qualquer tipo de requisição
-    http_method = event.get('httpMethod')
+    # Log do evento recebido para diagnóstico (removendo conteúdo binário grande)
+    debug_event = event.copy() if isinstance(event, dict) else {'event_type': str(type(event))}
+    if 'body' in debug_event and debug_event['body'] and len(debug_event['body']) > 200:
+        debug_event['body'] = f"{debug_event['body'][:100]}... [truncado] ...{debug_event['body'][-100:]}"
     
     logger.info(json.dumps({
-        'message': 'Requisição recebida',
+        'message': 'Evento recebido',
         'request_id': request_id,
-        'http_method': http_method,
-        'path': event.get('path', 'unknown')
+        'event_keys': list(event.keys()) if isinstance(event, dict) else None,
+        'debug_event': debug_event
+    }))
+    
+    # Detecção mais robusta do método HTTP
+    http_method = None
+    
+    if isinstance(event, dict):
+        # Tentativa 1: Direto da propriedade httpMethod (API Gateway)
+        http_method = event.get('httpMethod')
+        
+        # Tentativa 2: Do objeto requestContext (API Gateway v2)
+        if not http_method and 'requestContext' in event:
+            request_context = event.get('requestContext', {})
+            http_method = request_context.get('httpMethod') or request_context.get('http', {}).get('method')
+        
+        # Tentativa 3: Se há body mas não há método definido, assumir POST
+        if not http_method and 'body' in event and event.get('body'):
+            http_method = 'POST'
+    
+    logger.info(json.dumps({
+        'message': 'Método HTTP detectado',
+        'request_id': request_id,
+        'http_method': http_method
     }))
     
     try:
         # Direcionar para o handler adequado baseado no método HTTP
-        if http_method in ['GET', 'HEAD']:
+        if not http_method:
+            return create_response(400, {'error': 'REQUISIÇÃO_INVÁLIDA', 'message': 'Não foi possível determinar o método HTTP'})
+        elif http_method in ['GET', 'HEAD']:
             return handle_get_request(request_id)
         elif http_method == 'POST':
             return handle_post_request(event, request_id, start_time)
+        elif http_method == 'OPTIONS':
+            return handle_options_request(request_id)
         else:
             logger.warning(json.dumps({
                 'message': 'Método HTTP inválido',
@@ -194,9 +222,35 @@ def handle_post_request(event, request_id, start_time):
         }))
         raise  # Propagar exceção para ser tratada pelo handler principal
 
+def handle_options_request(request_id):
+    """Manipula solicitações OPTIONS (para CORS)"""
+    logger.info(json.dumps({
+        'message': 'Respondendo solicitação OPTIONS',
+        'request_id': request_id
+    }))
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Content-Type': CONFIG['CONTENT_TYPE'],
+            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Max-Age': '86400'
+        },
+        'body': '{}'
+    }
+
 def create_response(status_code, body):
-    """Cria uma resposta."""
-    headers = {'Content-Type': CONFIG['CONTENT_TYPE']}
+    """Cria uma resposta com suporte a CORS."""
+    headers = {
+        'Content-Type': CONFIG['CONTENT_TYPE'],
+        'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+        'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '86400'
+    }
     
     return {
         'statusCode': status_code,
