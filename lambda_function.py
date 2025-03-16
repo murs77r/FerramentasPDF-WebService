@@ -36,58 +36,84 @@ def lambda_handler(event, context):
     request_id = str(uuid.uuid4())
     start_time = time.time()
     
-    logger.info(json.dumps({
-        'message': 'Requisição recebida',
-        'request_id': request_id,
-        'http_method': event.get('httpMethod'),
-        'path': event.get('path', 'unknown'),
-        'origin': get_origin_header(event)  # Adicionando log da origem
-    }))
-    
-    # Verificar a origem e configurar cabeçalhos CORS
+    # Configuração inicial para qualquer tipo de requisição
+    http_method = event.get('httpMethod')
     origin = get_origin_header(event)
     cors_headers = get_cors_headers(origin)
     
-    # Tratamento específico para solicitações OPTIONS (pre-flight)
-    if event.get('httpMethod') == 'OPTIONS':
-        logger.info(json.dumps({
-            'message': 'Processando solicitação OPTIONS (pre-flight)',
-            'request_id': request_id,
-            'origin': origin,
-            'cors_headers': cors_headers
-        }))
-        return {
-            'statusCode': 204,
-            'headers': cors_headers,
-            'body': 'sucess'
-        }
+    logger.info(json.dumps({
+        'message': 'Requisição recebida',
+        'request_id': request_id,
+        'http_method': http_method,
+        'path': event.get('path', 'unknown'),
+        'origin': origin
+    }))
     
     try:
-        # Verificar se é uma solicitação GET para redirecionamento
-        if event.get('httpMethod') == 'GET':
-            redirect_url = "https://pdf.class-one.com.br"
-            logger.info(json.dumps({
-                'message': 'Redirecionando solicitação GET',
-                'request_id': request_id,
-                'redirect_to': redirect_url
-            }))
-            return {
-                'statusCode': 302,
-                'headers': {
-                    'Location': redirect_url,
-                    **cors_headers
-                },
-                'body': ''
-            }
-        
-        if event.get('httpMethod') != 'POST' and event.get('httpMethod') != 'GET':
+        # Direcionar para o handler adequado baseado no método HTTP
+        if http_method == 'OPTIONS':
+            return handle_options_request(request_id, cors_headers)
+        elif http_method == 'GET':
+            return handle_get_request(request_id, cors_headers)
+        elif http_method == 'POST':
+            return handle_post_request(event, request_id, start_time, cors_headers)
+        else:
             logger.warning(json.dumps({
                 'message': 'Método HTTP inválido',
                 'request_id': request_id,
-                'http_method': event.get('httpMethod')
+                'http_method': http_method
             }))
-            return create_response(400, {'error': 'MÉTODO_INVÁLIDO', 'message': 'Apenas método POST é suportado'}, cors_headers)
-        
+            return create_response(400, {'error': 'MÉTODO_INVÁLIDO', 'message': 'Apenas métodos POST, GET e OPTIONS são suportados'}, cors_headers)
+    
+    except Exception as e:
+        process_time = time.time() - start_time
+        error_details = traceback.format_exc()
+        logger.error(json.dumps({
+            'message': 'Erro interno do servidor',
+            'request_id': request_id,
+            'error': str(e),
+            'traceback': error_details,
+            'process_time_seconds': process_time
+        }))
+        return create_response(500, {
+            'error': 'ERRO_INTERNO',
+            'message': f'Erro interno do servidor: {str(e)}',
+            'details': error_details
+        }, cors_headers)
+
+def handle_options_request(request_id, cors_headers):
+    """Manipula solicitações OPTIONS (pre-flight)"""
+    logger.info(json.dumps({
+        'message': 'Processando solicitação OPTIONS (pre-flight)',
+        'request_id': request_id,
+        'cors_headers': cors_headers
+    }))
+    return {
+        'statusCode': 204,
+        'headers': cors_headers,
+        'body': 'success'
+    }
+
+def handle_get_request(request_id, cors_headers):
+    """Manipula solicitações GET (redirecionamento)"""
+    redirect_url = "https://pdf.class-one.com.br"
+    logger.info(json.dumps({
+        'message': 'Redirecionando solicitação GET',
+        'request_id': request_id,
+        'redirect_to': redirect_url
+    }))
+    return {
+        'statusCode': 302,
+        'headers': {
+            'Location': redirect_url,
+            **cors_headers
+        },
+        'body': ''
+    }
+
+def handle_post_request(event, request_id, start_time, cors_headers):
+    """Manipula solicitações POST (processamento de PDF)"""
+    try:
         body = json.loads(event.get('body', '{}'))
         
         if 'pdfBase64' not in body:
@@ -185,20 +211,14 @@ def lambda_handler(event, context):
         }, cors_headers)
         
     except Exception as e:
-        process_time = time.time() - start_time
         error_details = traceback.format_exc()
         logger.error(json.dumps({
-            'message': 'Erro interno do servidor',
+            'message': 'Erro ao processar requisição POST',
             'request_id': request_id,
             'error': str(e),
-            'traceback': error_details,
-            'process_time_seconds': process_time
+            'traceback': error_details
         }))
-        return create_response(500, {
-            'error': 'ERRO_INTERNO',
-            'message': f'Erro interno do servidor: {str(e)}',
-            'details': error_details
-        }, cors_headers)
+        raise  # Propagar exceção para ser tratada pelo handler principal
 
 def get_origin_header(event):
     """Extrai o cabeçalho Origin da requisição."""
