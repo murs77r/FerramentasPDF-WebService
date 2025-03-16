@@ -63,6 +63,23 @@ def lambda_handler(event, context):
         }
     
     try:
+        # Verificar se é uma solicitação GET para redirecionamento
+        if event.get('httpMethod') == 'GET':
+            redirect_url = "https://pdf.class-one.com.br"
+            logger.info(json.dumps({
+                'message': 'Redirecionando solicitação GET',
+                'request_id': request_id,
+                'redirect_to': redirect_url
+            }))
+            return {
+                'statusCode': 302,
+                'headers': {
+                    'Location': redirect_url,
+                    **cors_headers
+                },
+                'body': ''
+            }
+        
         if event.get('httpMethod') != 'POST':
             logger.warning(json.dumps({
                 'message': 'Método HTTP inválido',
