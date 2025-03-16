@@ -15,9 +15,9 @@ logger.setLevel(logging.INFO)
 CONFIG = {
     'MAX_PDF_SIZE_MB': float(os.environ.get('MAX_PDF_SIZE_MB', '3.0')),
     'CONTENT_TYPE': 'application/json',
-    'ALLOWED_ORIGINS': ['https://api.class-one.com.br', 'https://class-one.com.br'],
+    'ALLOWED_ORIGINS': ['https://api.class-one.com.br', 'https://class-one.com.br', 'https://removersenhapdf-api-rest-com-lambda.pages.dev/'],
     'CORS_HEADERS': {
-        'Access-Control-Allow-Origin': '*',  # Será substituído pela origem específica, se válida
+        'Access-Control-Allow-Origin': '*', 
         'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
         'Access-Control-Allow-Methods': 'OPTIONS,POST'
     }
