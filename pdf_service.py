@@ -43,25 +43,25 @@ class PDFService:
                 pdf_test = pikepdf.open(input_stream)
                 pdf_test.close()
                 logger.info("PDF não possui senha")
-                raise ValueError("O PDF não possui senha")
+                raise ValueError("ERRO: O PDF não possui senha.")
             except pikepdf.PasswordError:
                 # PDF requer senha, vamos tentar com a senha fornecida
                 logger.info("PDF possui senha, tentando com a senha fornecida")
                 input_stream.seek(0)  # Reset do ponteiro
             except Exception as e:
                 logger.error(f"Erro ao verificar proteção do PDF: {e}")
-                raise ValueError(f"Erro ao verificar proteção do PDF: {str(e)}")
+                raise ValueError(f"ERRO: Não foi possível verificar a segurança do PDF.")
             
             # Agora tenta abrir com a senha
             try:
                 pdf = pikepdf.open(input_stream, password=password)
-                logger.info("PDF aberto com sucesso usando a senha fornecida")
+                logger.info("PDF aberto com sucesso usando a senha fornecida.")
             except pikepdf.PasswordError as e:
                 logger.error(f"Senha incorreta: {e}")
-                raise ValueError("Senha incorreta")
+                raise ValueError("ERRO: A senha está errada")
             except Exception as e:
                 logger.error(f"Erro ao abrir PDF com senha: {e}")
-                raise ValueError(f"Erro ao abrir PDF com a senha: {str(e)}")
+                raise ValueError(f"ERRO: ao abrir PDF com a senha informada.")
             
             # Salva o PDF sem senha
             output_stream = io.BytesIO()
