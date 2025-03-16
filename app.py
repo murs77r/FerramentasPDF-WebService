@@ -23,7 +23,8 @@ def remove_pdf_password():
         if not data:
             return jsonify({"error": "Dados não fornecidos"}), 400
             
-        pdf_base64 = data.get('pdf_base64')
+        # Verifica tanto o formato camelCase quanto o snake_case para compatibilidade
+        pdf_base64 = data.get('pdf_base64') or data.get('pdfBase64')
         password = data.get('password')
         
         if not pdf_base64:
