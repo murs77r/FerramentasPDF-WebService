@@ -150,7 +150,7 @@ class PDFService:
                     import zipfile
                     zip_buffer = io.BytesIO()
                     
-                    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_STORED) as zip_file:
                         for page_num in range(len(pdf_document)):
                             page = pdf_document[page_num]
                             pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
