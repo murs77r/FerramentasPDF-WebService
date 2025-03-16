@@ -19,7 +19,8 @@ CONFIG = {
         'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
         'Access-Control-Allow-Methods': 'OPTIONS,POST',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': 'true'
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '86400'  # Adiciona um tempo de cache para o preflight (24 horas)
     }
 }
 
@@ -38,7 +39,9 @@ def lambda_handler(event, context):
     logger.info(json.dumps({
         'message': 'Requisição recebida',
         'request_id': request_id,
-        'http_method': event.get('httpMethod')
+        'http_method': event.get('httpMethod'),
+        'path': event.get('path', 'unknown'),
+        'origin': get_origin_header(event)  # Adicionando log da origem
     }))
     
     # Verificar a origem e configurar cabeçalhos CORS
@@ -50,10 +53,11 @@ def lambda_handler(event, context):
         logger.info(json.dumps({
             'message': 'Processando solicitação OPTIONS (pre-flight)',
             'request_id': request_id,
-            'origin': origin
+            'origin': origin,
+            'cors_headers': cors_headers
         }))
         return {
-            'statusCode': 200,
+            'statusCode': 204,  # Mudança para 204 (No Content) que é comum para OPTIONS
             'headers': cors_headers,
             'body': ''
         }
@@ -182,19 +186,32 @@ def lambda_handler(event, context):
 def get_origin_header(event):
     """Extrai o cabeçalho Origin da requisição."""
     headers = event.get('headers', {}) or {}
-    return headers.get('Origin', headers.get('origin', ''))
+    return headers.get('Origin', headers.get('origin', '*'))  # Retorna * como padrão para aceitar qualquer origem
 
 def get_cors_headers(origin):
     """Retorna os cabeçalhos CORS configurados."""
-    return dict(CONFIG['CORS_HEADERS'])
+    cors_headers = dict(CONFIG['CORS_HEADERS'])
+    # Se uma origem específica for fornecida, use-a (melhor para credenciais)
+    if origin and origin != '*':
+        cors_headers['Access-Control-Allow-Origin'] = origin
+    
+    logger.debug(json.dumps({
+        'message': 'Cabeçalhos CORS configurados',
+        'cors_headers': cors_headers
+    }))
+    
+    return cors_headers
 
 def create_response(status_code, body, cors_headers=None):
     """Cria uma resposta com cabeçalhos CORS."""
     headers = {'Content-Type': CONFIG['CONTENT_TYPE']}
     
-    # Adiciona cabeçalhos CORS, se fornecidos
+    # Sempre adiciona cabeçalhos CORS em todas as respostas
     if cors_headers:
         headers.update(cors_headers)
+    else:
+        # Caso não tenham sido fornecidos, usar os padrões
+        headers.update(dict(CONFIG['CORS_HEADERS']))
     
     return {
         'statusCode': status_code,
