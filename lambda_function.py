@@ -45,22 +45,27 @@ def lambda_handler(event, context):
     http_method = None
     
     if isinstance(event, dict):
-        # Tentativa 1: Direto da propriedade httpMethod (API Gateway)
+        # Tentativa 1: Direto da propriedade httpMethod (API Gateway REST)
         http_method = event.get('httpMethod')
         
-        # Tentativa 2: Do objeto requestContext (API Gateway v2)
+        # Tentativa 2: Do objeto requestContext (API Gateway HTTP API)
         if not http_method and 'requestContext' in event:
             request_context = event.get('requestContext', {})
             http_method = request_context.get('httpMethod') or request_context.get('http', {}).get('method')
         
-        # Tentativa 3: Se há body mas não há método definido, assumir POST
+        # Tentativa 3: Do objeto de método diretamente (invocação direta)
+        if not http_method and 'method' in event:
+            http_method = event.get('method')
+            
+        # Tentativa 4: Se há body mas não há método definido, assumir POST
         if not http_method and 'body' in event and event.get('body'):
             http_method = 'POST'
     
     logger.info(json.dumps({
         'message': 'Método HTTP detectado',
         'request_id': request_id,
-        'http_method': http_method
+        'http_method': http_method,
+        'is_base64_encoded': event.get('isBase64Encoded', False) if isinstance(event, dict) else False
     }))
     
     try:
@@ -116,12 +121,34 @@ def handle_get_request(request_id):
 def handle_post_request(event, request_id, start_time):
     """Manipula solicitações POST (processamento de PDF)"""
     try:
-        body = json.loads(event.get('body', '{}'))
+        # Lidando com diferentes formas que o corpo pode chegar do API Gateway
+        request_body = event.get('body', '{}')
+        
+        # Verificar se o corpo está codificado em base64 pelo API Gateway
+        if isinstance(event, dict) and event.get('isBase64Encoded', False):
+            logger.info(json.dumps({
+                'message': 'Decodificando corpo Base64 do API Gateway',
+                'request_id': request_id
+            }))
+            request_body = base64.b64decode(request_body).decode('utf-8')
+        
+        # Tentar fazer parse do JSON
+        try:
+            body = json.loads(request_body)
+        except json.JSONDecodeError as e:
+            logger.error(json.dumps({
+                'message': 'Falha ao decodificar JSON do corpo',
+                'request_id': request_id,
+                'error': str(e),
+                'body_preview': request_body[:100] if isinstance(request_body, str) else "Não é string"
+            }))
+            return create_response(400, {'error': 'JSON_INVÁLIDO', 'message': 'O corpo da requisição não contém um JSON válido'})
         
         if 'pdfBase64' not in body:
             logger.warning(json.dumps({
                 'message': 'Parâmetro pdfBase64 ausente',
-                'request_id': request_id
+                'request_id': request_id,
+                'body_keys': list(body.keys())
             }))
             return create_response(400, {'error': 'PARÂMETRO_AUSENTE', 'message': 'O parâmetro pdfBase64 é obrigatório'})
         
