@@ -57,9 +57,9 @@ def lambda_handler(event, context):
             'cors_headers': cors_headers
         }))
         return {
-            'statusCode': 204,  # Mudança para 204 (No Content) que é comum para OPTIONS
+            'statusCode': 204,
             'headers': cors_headers,
-            'body': ''
+            'body': 'sucess'
         }
     
     try:
@@ -80,7 +80,7 @@ def lambda_handler(event, context):
                 'body': ''
             }
         
-        if event.get('httpMethod') != 'POST':
+        if event.get('httpMethod') != 'POST' and event.get('httpMethod') != 'GET':
             logger.warning(json.dumps({
                 'message': 'Método HTTP inválido',
                 'request_id': request_id,
