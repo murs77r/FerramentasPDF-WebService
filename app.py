@@ -5,12 +5,17 @@ import logging
 import os
 
 # Configuração de logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levellevel)s - %(message)s')
 logger = logging.getLogger('pdf_api')
 
 app = Flask(__name__)
-# Configuração do CORS - permite requisições de qualquer origem
-CORS(app, resources={r"/*": {"origins": "*"}})
+# Configuração do CORS - permite requisições apenas de class-one.com.br e seus subdomínios
+CORS(app, resources={r"/*": {"origins": [
+    "https://class-one.com.br", 
+    "https://*.class-one.com.br",
+    "http://class-one.com.br",
+    "http://*.class-one.com.br"
+]}})
 
 @app.route('/remove-pdf-password', methods=['POST'])
 def remove_pdf_password():
