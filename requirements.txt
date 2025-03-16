@@ -1,2 +1,2 @@
-Flask==2.0.1
-pikepdf==5.1.1
+Flask
+pikepdf
