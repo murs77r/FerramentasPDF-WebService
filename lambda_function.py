@@ -144,100 +144,7 @@ def handle_post_request(event, request_id, start_time):
             }))
             return create_response(400, {'error': 'JSON_INVÁLIDO', 'message': 'O corpo da requisição não contém um JSON válido'})
         
-        if 'pdfBase64' not in body:
-            logger.warning(json.dumps({
-                'message': 'Parâmetro pdfBase64 ausente',
-                'request_id': request_id,
-                'body_keys': list(body.keys())
-            }))
-            return create_response(400, {'error': 'PARÂMETRO_AUSENTE', 'message': 'O parâmetro pdfBase64 é obrigatório'})
-        
-        if 'password' not in body:
-            logger.warning(json.dumps({
-                'message': 'Parâmetro password ausente',
-                'request_id': request_id
-            }))
-            return create_response(400, {'error': 'PARÂMETRO_AUSENTE', 'message': 'O parâmetro password é obrigatório'})
-        
-        try:
-            pdf_data = base64.b64decode(body['pdfBase64'])
-        except Exception as e:
-            logger.error(json.dumps({
-                'message': 'Falha ao decodificar PDF base64',
-                'request_id': request_id,
-                'error': str(e)
-            }))
-            return create_response(400, {'error': 'PDF_INVÁLIDO', 'message': 'O arquivo PDF enviado não é válido'})
-        
-        pdf_size_mb = len(pdf_data) / (1024 * 1024)
-        logger.info(json.dumps({
-            'message': 'Tamanho do PDF recebido',
-            'request_id': request_id,
-            'pdf_size_mb': pdf_size_mb
-        }))
-        
-        if pdf_size_mb > CONFIG['MAX_PDF_SIZE_MB']:
-            logger.warning(json.dumps({
-                'message': 'Tamanho do PDF excedido',
-                'request_id': request_id,
-                'pdf_size_mb': pdf_size_mb,
-                'limit_mb': CONFIG['MAX_PDF_SIZE_MB']
-            }))
-            return create_response(413, {'error': 'TAMANHO_EXCEDIDO', 
-                                         'message': f'O tamanho do PDF ({pdf_size_mb:.2f}MB) excede o limite de {CONFIG["MAX_PDF_SIZE_MB"]}MB'})
-        
-        with safe_tempfile() as temp_input_path, safe_tempfile() as temp_output_path:
-            with open(temp_input_path, 'wb') as f:
-                f.write(pdf_data)
-            
-            try:
-                with Pdf.open(temp_input_path, password=body['password']) as pdf:
-                    if not pdf.is_encrypted:
-                        logger.info(json.dumps({
-                            'message': 'PDF não está protegido por senha',
-                            'request_id': request_id
-                        }))
-                        return create_response(400, {'error': 'PDF_SEM_SENHA', 'message': 'O PDF fornecido não está protegido por senha'})
-                    
-                    logger.info(json.dumps({
-                        'message': 'Removendo senha do PDF',
-                        'request_id': request_id
-                    }))
-                    pdf.save(temp_output_path)
-            except PasswordError:
-                logger.warning(json.dumps({
-                    'message': 'Senha incorreta fornecida',
-                    'request_id': request_id
-                }))
-                return create_response(401, {'error': 'SENHA_INCORRETA', 'message': 'A senha fornecida está incorreta'})
-            except Exception as e:
-                error_details = traceback.format_exc()
-                logger.error(json.dumps({
-                    'message': 'Erro ao processar PDF',
-                    'request_id': request_id,
-                    'error': str(e),
-                    'traceback': error_details
-                }))
-                return create_response(500, {
-                    'error': 'ERRO_PROCESSAMENTO',
-                    'message': f'Erro ao processar o arquivo PDF: {str(e)}',
-                    'details': error_details
-                })
-            
-            with open(temp_output_path, 'rb') as f:
-                processed_pdf = base64.b64encode(f.read()).decode('utf-8')
-        
-        process_time = time.time() - start_time
-        logger.info(json.dumps({
-            'message': 'Processamento concluído com sucesso',
-            'request_id': request_id,
-            'process_time_seconds': process_time
-        }))
-        
-        return create_response(200, {
-            'message': 'Senha removida com sucesso',
-            'pdfBase64': processed_pdf
-        })
+        return process_pdf_password_removal(body, request_id, start_time)
         
     except Exception as e:
         error_details = traceback.format_exc()
@@ -248,6 +155,103 @@ def handle_post_request(event, request_id, start_time):
             'traceback': error_details
         }))
         raise  # Propagar exceção para ser tratada pelo handler principal
+
+def process_pdf_password_removal(body, request_id, start_time):
+    """Processa a remoção de senha do PDF"""
+    if 'pdfBase64' not in body:
+        logger.warning(json.dumps({
+            'message': 'Parâmetro pdfBase64 ausente',
+            'request_id': request_id,
+            'body_keys': list(body.keys())
+        }))
+        return create_response(400, {'error': 'PARÂMETRO_AUSENTE', 'message': 'O parâmetro pdfBase64 é obrigatório'})
+    
+    if 'password' not in body:
+        logger.warning(json.dumps({
+            'message': 'Parâmetro password ausente',
+            'request_id': request_id
+        }))
+        return create_response(400, {'error': 'PARÂMETRO_AUSENTE', 'message': 'O parâmetro password é obrigatório'})
+    
+    try:
+        pdf_data = base64.b64decode(body['pdfBase64'])
+    except Exception as e:
+        logger.error(json.dumps({
+            'message': 'Falha ao decodificar PDF base64',
+            'request_id': request_id,
+            'error': str(e)
+        }))
+        return create_response(400, {'error': 'PDF_INVÁLIDO', 'message': 'O arquivo PDF enviado não é válido'})
+    
+    pdf_size_mb = len(pdf_data) / (1024 * 1024)
+    logger.info(json.dumps({
+        'message': 'Tamanho do PDF recebido',
+        'request_id': request_id,
+        'pdf_size_mb': pdf_size_mb
+    }))
+    
+    if pdf_size_mb > CONFIG['MAX_PDF_SIZE_MB']:
+        logger.warning(json.dumps({
+            'message': 'Tamanho do PDF excedido',
+            'request_id': request_id,
+            'pdf_size_mb': pdf_size_mb,
+            'limit_mb': CONFIG['MAX_PDF_SIZE_MB']
+        }))
+        return create_response(413, {'error': 'TAMANHO_EXCEDIDO', 
+                                     'message': f'O tamanho do PDF ({pdf_size_mb:.2f}MB) excede o limite de {CONFIG["MAX_PDF_SIZE_MB"]}MB'})
+    
+    with safe_tempfile() as temp_input_path, safe_tempfile() as temp_output_path:
+        with open(temp_input_path, 'wb') as f:
+            f.write(pdf_data)
+        
+        try:
+            with Pdf.open(temp_input_path, password=body['password']) as pdf:
+                if not pdf.is_encrypted:
+                    logger.info(json.dumps({
+                        'message': 'PDF não está protegido por senha',
+                        'request_id': request_id
+                    }))
+                    return create_response(400, {'error': 'PDF_SEM_SENHA', 'message': 'O PDF fornecido não está protegido por senha'})
+                
+                logger.info(json.dumps({
+                    'message': 'Removendo senha do PDF',
+                    'request_id': request_id
+                }))
+                pdf.save(temp_output_path)
+        except PasswordError:
+            logger.warning(json.dumps({
+                'message': 'Senha incorreta fornecida',
+                'request_id': request_id
+            }))
+            return create_response(401, {'error': 'SENHA_INCORRETA', 'message': 'A senha fornecida está incorreta'})
+        except Exception as e:
+            error_details = traceback.format_exc()
+            logger.error(json.dumps({
+                'message': 'Erro ao processar PDF',
+                'request_id': request_id,
+                'error': str(e),
+                'traceback': error_details
+            }))
+            return create_response(500, {
+                'error': 'ERRO_PROCESSAMENTO',
+                'message': f'Erro ao processar o arquivo PDF: {str(e)}',
+                'details': error_details
+            })
+        
+        with open(temp_output_path, 'rb') as f:
+            processed_pdf = base64.b64encode(f.read()).decode('utf-8')
+    
+    process_time = time.time() - start_time
+    logger.info(json.dumps({
+        'message': 'Processamento concluído com sucesso',
+        'request_id': request_id,
+        'process_time_seconds': process_time
+    }))
+    
+    return create_response(200, {
+        'message': 'Senha removida com sucesso',
+        'pdfBase64': processed_pdf
+    })
 
 def handle_options_request(request_id):
     """Manipula solicitações OPTIONS (para CORS)"""

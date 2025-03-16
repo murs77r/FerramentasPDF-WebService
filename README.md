@@ -49,7 +49,7 @@ Em caso de erro:
 {
   "error": "CÓDIGO_DO_ERRO",
   "message": "Descrição detalhada do erro",
-  "details": "Detalhes técnicos (apenas para erros internos)"
+  "details": "Detalhes técnicos (apenas para erros internos)
 }
 ```
 
@@ -99,3 +99,62 @@ A função implementa logs estruturados em formato JSON, incluindo:
 - Não há armazenamento permanente de dados
 - Todo processamento ocorre na memória da função Lambda
 - Logs estruturados para auditoria e monitoramento
+
+# Removedor de Senha PDF - Serviço Web
+
+Este serviço permite remover senha de arquivos PDF através de uma API REST.
+
+## Como executar localmente
+
+1. Instale as dependências:
+   ```
+   pip install -r requirements.txt
+   ```
+
+2. Execute o servidor Flask:
+   ```
+   python app.py
+   ```
+
+3. O servidor estará disponível em `http://localhost:5000`
+
+## Como implantar no Koyeb
+
+1. Crie uma conta no [Koyeb](https://www.koyeb.com/)
+
+2. Instale a CLI do Koyeb seguindo as [instruções oficiais](https://www.koyeb.com/docs/cli/installation)
+
+3. Faça login com sua conta Koyeb:
+   ```
+   koyeb login
+   ```
+
+4. Implante a aplicação (assumindo que você já tenha o Docker instalado):
+   ```
+   koyeb app create --name pdf-password-remover --docker .
+   ```
+
+5. Configure as variáveis de ambiente no painel do Koyeb:
+   - `MAX_PDF_SIZE_MB`: Tamanho máximo permitido para arquivos PDF em MB (padrão: 3.0)
+
+## Como usar a API
+
+### Remover senha de um PDF
+
+**Endpoint:** `POST /`
+
+**Corpo da requisição:**
+```json
+{
+  "pdfBase64": "BASE64_DO_PDF_AQUI",
+  "password": "SENHA_DO_PDF"
+}
+```
+
+**Resposta de sucesso:**
+```json
+{
+  "message": "Senha removida com sucesso",
+  "pdfBase64": "BASE64_DO_PDF_SEM_SENHA"
+}
+```
