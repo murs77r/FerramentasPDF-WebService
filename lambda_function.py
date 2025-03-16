@@ -18,7 +18,7 @@ CONFIG = {
     'CORS_HEADERS': {
         'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
         'Access-Control-Allow-Methods': 'OPTIONS,POST',
-        'Access-Control-Allow-Origin': 'https://pdf.class-one.com.br/',
+        'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Credentials': 'true'
     }
 }
