@@ -5,7 +5,6 @@ import os
 import sys
 import traceback
 
-# Configuração de logging mais detalhada
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -16,7 +15,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger('pdf_api')
 
-# Log de inicialização
 logger.info("Iniciando serviço de PDF")
 
 try:
@@ -27,17 +25,12 @@ except ImportError as e:
     sys.exit(1)
 
 app = Flask(__name__)
-# Configuração do CORS - permite requisições apenas de class-one.com.br e seus subdomínios
 CORS(app, resources={r"/*": {"origins": "https://pdf.class-one.com.br"}})
 
 @app.route('/remove-pdf-password', methods=['POST'])
 def remove_pdf_password():
-    """
-    Endpoint para remover senha de um PDF
-    """
     try:
         logger.debug("Requisição recebida para remover senha de PDF")
-        # Verifica se os dados foram fornecidos corretamente
         if not request.is_json:
             logger.warning("Requisição sem JSON válido")
             return jsonify({"error": "É necessário enviar dados em formato JSON"}), 400
@@ -47,7 +40,6 @@ def remove_pdf_password():
             logger.warning("JSON vazio recebido")
             return jsonify({"error": "Dados não fornecidos"}), 400
             
-        # Verifica tanto o formato camelCase quanto o snake_case para compatibilidade
         pdf_base64 = data.get('pdf_base64') or data.get('pdfBase64')
         password = data.get('password')
         
@@ -58,12 +50,10 @@ def remove_pdf_password():
         if not password:
             return jsonify({"error": "Senha não fornecida"}), 400
         
-        # Processa o PDF para remover a senha
         logger.debug("Tentando remover senha do PDF")
         result_base64 = PDFService.remove_password(pdf_base64, password)
         logger.info("Senha removida com sucesso")
         
-        # Retorna o PDF sem senha
         return jsonify({"pdf_base64": result_base64})
         
     except ValueError as e:
@@ -76,26 +66,19 @@ def remove_pdf_password():
 
 @app.route('/pdf-to-image', methods=['POST'])
 def pdf_to_image():
-    """
-    Endpoint para converter PDF em imagem PNG
-    """
     try:
-        # Verifica se os dados foram fornecidos corretamente
         data = request.json
         if not data:
             return jsonify({"error": "Dados não fornecidos"}), 400
             
-        # Verifica tanto o formato camelCase quanto o snake_case para compatibilidade
         pdf_base64 = data.get('pdf_base64') or data.get('pdfBase64')
-        password = data.get('password')  # Senha é opcional
+        password = data.get('password')
         
         if not pdf_base64:
             return jsonify({"error": "PDF em base64 não fornecido"}), 400
         
-        # Processa o PDF para converter em PNG
         result_base64 = PDFService.pdf_to_image(pdf_base64, password)
         
-        # Retorna a imagem PNG em base64
         return jsonify({"image_base64": result_base64})
         
     except ValueError as e:
@@ -107,14 +90,10 @@ def pdf_to_image():
 
 @app.route('/', methods=['GET'])
 def health_check():
-    """
-    Endpoint para verificação de saúde do servidor
-    """
     return jsonify({"status": "ok", "message": "Serviço de remoção de senha de PDF está funcionando"})
 
 if __name__ == '__main__':
     try:
-        # Usar variáveis de ambiente para porta e host, com valores padrão
         port = int(os.environ.get('PORT', 5000))
         logger.info(f"Iniciando servidor na porta {port}")
         app.run(host='0.0.0.0', port=port, debug=True)
