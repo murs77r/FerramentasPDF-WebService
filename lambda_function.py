@@ -15,7 +15,7 @@ logger.setLevel(logging.INFO)
 CONFIG = {
     'MAX_PDF_SIZE_MB': float(os.environ.get('MAX_PDF_SIZE_MB', '3.0')),
     'CONTENT_TYPE': 'application/json',
-    'ALLOWED_ORIGINS': ['https://api.class-one.com.br/'],
+    'ALLOWED_ORIGINS': ['https://pdf.class-one.com.br/'],
     'CORS_HEADERS': {
         'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
         'Access-Control-Allow-Methods': 'OPTIONS,POST'
