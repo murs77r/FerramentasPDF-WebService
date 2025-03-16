@@ -10,12 +10,7 @@ logger = logging.getLogger('pdf_api')
 
 app = Flask(__name__)
 # Configuração do CORS - permite requisições apenas de class-one.com.br e seus subdomínios
-CORS(app, resources={r"/*": {"origins": [
-    "https://class-one.com.br", 
-    "https://*.class-one.com.br",
-    "http://class-one.com.br",
-    "http://*.class-one.com.br"
-]}})
+CORS(app, resources={r"/*": {"origins": ["https://pdf.class-one.com.br",]}})
 
 @app.route('/remove-pdf-password', methods=['POST'])
 def remove_pdf_password():
