@@ -53,7 +53,7 @@ def lambda_handler(event, context):
         # Direcionar para o handler adequado baseado no método HTTP
         if http_method == 'OPTIONS':
             return handle_options_request(request_id, cors_headers)
-        elif http_method == 'GET':
+        elif http_method in ['GET', 'HEAD']:
             return handle_get_request(request_id, cors_headers)
         elif http_method == 'POST':
             return handle_post_request(event, request_id, start_time, cors_headers)
