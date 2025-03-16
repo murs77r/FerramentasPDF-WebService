@@ -2,3 +2,4 @@ flask
 gunicorn
 PyPDF2
 pikepdf
+flask-cors

@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from pdf_service import PDFService
 import logging
 import os
@@ -8,6 +9,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger('pdf_api')
 
 app = Flask(__name__)
+# Configuração do CORS - permite requisições de qualquer origem
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/remove-pdf-password', methods=['POST'])
 def remove_pdf_password():
