@@ -15,9 +15,8 @@ logger.setLevel(logging.INFO)
 CONFIG = {
     'MAX_PDF_SIZE_MB': float(os.environ.get('MAX_PDF_SIZE_MB', '3.0')),
     'CONTENT_TYPE': 'application/json',
-    'ALLOWED_ORIGINS': ['https://api.class-one.com.br', 'https://class-one.com.br', 'https://removersenhapdf-api-rest-com-lambda.pages.dev/'],
+    'ALLOWED_ORIGINS': ['https://api.class-one.com.br', 'https://class-one.com.br'],
     'CORS_HEADERS': {
-        'Access-Control-Allow-Origin': '*', 
         'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
         'Access-Control-Allow-Methods': 'OPTIONS,POST'
     }
@@ -188,13 +187,21 @@ def get_cors_headers(origin):
     """Gera cabeçalhos CORS com base na origem recebida."""
     headers = dict(CONFIG['CORS_HEADERS'])
     
-    # Se a origem for uma das permitidas, configura o cabeçalho específico para ela
+    # Verificar se a origem está na lista de origens permitidas
     if origin and origin in CONFIG['ALLOWED_ORIGINS']:
         headers['Access-Control-Allow-Origin'] = origin
+        headers['Access-Control-Allow-Credentials'] = 'true'
+    elif not origin:
+        # Se não houver origem, usar wildcard (menos seguro, mas mais permissivo)
+        headers['Access-Control-Allow-Origin'] = '*'
     else:
-        # Caso contrário, use o primeiro domínio permitido como padrão
-        if CONFIG['ALLOWED_ORIGINS']:
-            headers['Access-Control-Allow-Origin'] = CONFIG['ALLOWED_ORIGINS'][0]
+        # Se a origem não estiver na lista, usar uma origem permitida (para fins de log)
+        logger.warning(json.dumps({
+            'message': 'Origem não permitida tentou acessar a API',
+            'origin': origin
+        }))
+        # Usar a primeira origem permitida como padrão
+        headers['Access-Control-Allow-Origin'] = CONFIG['ALLOWED_ORIGINS'][0]
     
     return headers
 
