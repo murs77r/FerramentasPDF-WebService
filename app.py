@@ -1,95 +1,44 @@
-import os
-import time
-import uuid
-import json
+from flask import Flask, request, jsonify
+from pdf_service import PDFService
 import logging
-from flask import Flask, request, jsonify, redirect
-from flask_cors import CORS
-from lambda_function import process_pdf_password_removal, CONFIG, logger
 
-# Configuração do logger
-logging.basicConfig(level=logging.INFO)
+# Configuração de logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('pdf_api')
 
-# Inicializar a aplicação Flask
 app = Flask(__name__)
-CORS(app)  # Habilitar CORS para todas as rotas
 
-@app.route('/', methods=['GET'])
-def index():
-    """Rota principal que redireciona para o site do projeto"""
-    return redirect("https://pdf.class-one.com.br", code=302)
-
-@app.route('/', methods=['POST'])
-def remove_password():
-    """Rota para processar a remoção de senha do PDF"""
-    request_id = str(uuid.uuid4())
-    start_time = time.time()
-    
-    logger.info(json.dumps({
-        'message': 'Requisição POST recebida',
-        'request_id': request_id,
-        'remote_addr': request.remote_addr,
-    }))
-    
+@app.route('/remove-pdf-password', methods=['POST'])
+def remove_pdf_password():
+    """
+    Endpoint para remover senha de um PDF
+    """
     try:
-        # Verificar se o conteúdo é JSON
-        if not request.is_json:
-            logger.warning(json.dumps({
-                'message': 'Conteúdo não é JSON',
-                'request_id': request_id,
-                'content_type': request.content_type
-            }))
-            return jsonify({
-                'error': 'FORMATO_INVÁLIDO', 
-                'message': 'O conteúdo deve ser JSON'
-            }), 400
+        # Verifica se os dados foram fornecidos corretamente
+        data = request.json
+        if not data:
+            return jsonify({"error": "Dados não fornecidos"}), 400
             
-        # Processar a remoção de senha
-        result = process_pdf_password_removal(request.json, request_id, start_time)
+        pdf_base64 = data.get('pdf_base64')
+        password = data.get('password')
         
-        # Converter a resposta do formato Lambda para Flask
-        status_code = result['statusCode']
-        body = json.loads(result['body']) if isinstance(result['body'], str) else result['body']
+        if not pdf_base64:
+            return jsonify({"error": "PDF em base64 não fornecido"}), 400
+        if not password:
+            return jsonify({"error": "Senha não fornecida"}), 400
         
-        logger.info(json.dumps({
-            'message': 'Requisição processada',
-            'request_id': request_id,
-            'status_code': status_code,
-            'process_time_seconds': time.time() - start_time
-        }))
+        # Processa o PDF para remover a senha
+        result_base64 = PDFService.remove_password(pdf_base64, password)
         
-        return jsonify(body), status_code
+        # Retorna o PDF sem senha
+        return jsonify({"pdf_base64": result_base64})
         
+    except ValueError as e:
+        logger.error(f"Erro de validação: {str(e)}")
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.error(json.dumps({
-            'message': 'Erro ao processar requisição',
-            'request_id': request_id,
-            'error': str(e),
-        }))
-        return jsonify({
-            'error': 'ERRO_INTERNO',
-            'message': f'Erro interno do servidor: {str(e)}'
-        }), 500
+        logger.error(f"Erro interno: {str(e)}")
+        return jsonify({"error": f"Erro interno do servidor: {str(e)}"}), 500
 
-@app.route('/', methods=['OPTIONS'])
-def handle_options():
-    """Manipula requisições OPTIONS para CORS"""
-    return '', 204
-
-if __name__ == "__main__":
-    # Obter a porta do ambiente (padrão do Koyeb) ou usar 5000 como padrão
-    port = int(os.environ.get('PORT', 5000))
-    
-    # Configurar o tamanho máximo do PDF através de variável de ambiente
-    max_pdf_size = os.environ.get('MAX_PDF_SIZE_MB')
-    if max_pdf_size:
-        CONFIG['MAX_PDF_SIZE_MB'] = float(max_pdf_size)
-    
-    logger.info(json.dumps({
-        'message': 'Iniciando servidor Flask',
-        'port': port,
-        'max_pdf_size_mb': CONFIG['MAX_PDF_SIZE_MB']
-    }))
-    
-    # Iniciar o servidor
-    app.run(host='0.0.0.0', port=port)
+if __name__ == '__main__':
+    app.run(debug=True)
