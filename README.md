@@ -1,4 +1,4 @@
-# 🔓 Web Service: Remover Senha de PDF
+# 🔓 Removedor de Senha PDF no KOYAB com FLASK/PikePDF
 
 Este repositório contém um serviço web para remoção de proteção por senha de arquivos PDF. O serviço recebe arquivos em formato Base64, remove a senha de proteção e retorna o PDF desbloqueado.
 
