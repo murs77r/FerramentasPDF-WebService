@@ -17,16 +17,6 @@ CONFIG = {
     'CONTENT_TYPE': 'application/json'
 }
 
-# Configuração de CORS global
-CORS_HEADERS = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'OPTIONS,POST',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-Requested-With,Accept,Origin,Cache-Control,X-Requested-With',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-    'Access-Control-Expose-Headers': 'Content-Length,Content-Type'
-}
-
 @contextmanager
 def safe_tempfile(suffix='.pdf'):
     temp_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
@@ -45,31 +35,6 @@ def lambda_handler(event, context):
         'http_method': event.get('httpMethod')
     }))
     
-    # Obter a origem da requisição se presente
-    origin = '*'
-    headers = event.get('headers', {}) or {}
-    if headers and 'origin' in headers:
-        origin = headers['origin']
-    elif headers and 'Origin' in headers:
-        origin = headers['Origin']
-    
-    cors_headers = CORS_HEADERS.copy()
-    cors_headers['Access-Control-Allow-Origin'] = origin
-    
-    # Tratar requisições OPTIONS para CORS preflight
-    if event.get('httpMethod') == 'OPTIONS':
-        logger.info(json.dumps({
-            'message': 'Requisição OPTIONS recebida (preflight CORS)',
-            'request_id': request_id,
-            'origin': origin
-        }))
-        # Resposta específica para preflight com todos os cabeçalhos CORS necessários
-        return {
-            'statusCode': 200,
-            'headers': cors_headers,
-            'body': ''
-        }
-    
     try:
         if event.get('httpMethod') != 'POST':
             logger.warning(json.dumps({
@@ -77,7 +42,7 @@ def lambda_handler(event, context):
                 'request_id': request_id,
                 'http_method': event.get('httpMethod')
             }))
-            return create_response(400, {'error': 'MÉTODO_INVÁLIDO', 'message': 'Apenas método POST é suportado'}, origin)
+            return create_response(400, {'error': 'MÉTODO_INVÁLIDO', 'message': 'Apenas método POST é suportado'})
         
         body = json.loads(event.get('body', '{}'))
         
@@ -86,14 +51,14 @@ def lambda_handler(event, context):
                 'message': 'Parâmetro pdfBase64 ausente',
                 'request_id': request_id
             }))
-            return create_response(400, {'error': 'PARÂMETRO_AUSENTE', 'message': 'O parâmetro pdfBase64 é obrigatório'}, origin)
+            return create_response(400, {'error': 'PARÂMETRO_AUSENTE', 'message': 'O parâmetro pdfBase64 é obrigatório'})
         
         if 'password' not in body:
             logger.warning(json.dumps({
                 'message': 'Parâmetro password ausente',
                 'request_id': request_id
             }))
-            return create_response(400, {'error': 'PARÂMETRO_AUSENTE', 'message': 'O parâmetro password é obrigatório'}, origin)
+            return create_response(400, {'error': 'PARÂMETRO_AUSENTE', 'message': 'O parâmetro password é obrigatório'})
         
         try:
             pdf_data = base64.b64decode(body['pdfBase64'])
@@ -103,7 +68,7 @@ def lambda_handler(event, context):
                 'request_id': request_id,
                 'error': str(e)
             }))
-            return create_response(400, {'error': 'PDF_INVÁLIDO', 'message': 'O arquivo PDF enviado não é válido'}, origin)
+            return create_response(400, {'error': 'PDF_INVÁLIDO', 'message': 'O arquivo PDF enviado não é válido'})
         
         pdf_size_mb = len(pdf_data) / (1024 * 1024)
         logger.info(json.dumps({
@@ -120,7 +85,7 @@ def lambda_handler(event, context):
                 'limit_mb': CONFIG['MAX_PDF_SIZE_MB']
             }))
             return create_response(413, {'error': 'TAMANHO_EXCEDIDO', 
-                                         'message': f'O tamanho do PDF ({pdf_size_mb:.2f}MB) excede o limite de {CONFIG["MAX_PDF_SIZE_MB"]}MB'}, origin)
+                                         'message': f'O tamanho do PDF ({pdf_size_mb:.2f}MB) excede o limite de {CONFIG["MAX_PDF_SIZE_MB"]}MB'})
         
         with safe_tempfile() as temp_input_path, safe_tempfile() as temp_output_path:
             with open(temp_input_path, 'wb') as f:
@@ -133,7 +98,7 @@ def lambda_handler(event, context):
                             'message': 'PDF não está protegido por senha',
                             'request_id': request_id
                         }))
-                        return create_response(400, {'error': 'PDF_SEM_SENHA', 'message': 'O PDF fornecido não está protegido por senha'}, origin)
+                        return create_response(400, {'error': 'PDF_SEM_SENHA', 'message': 'O PDF fornecido não está protegido por senha'})
                     
                     logger.info(json.dumps({
                         'message': 'Removendo senha do PDF',
@@ -145,7 +110,7 @@ def lambda_handler(event, context):
                     'message': 'Senha incorreta fornecida',
                     'request_id': request_id
                 }))
-                return create_response(401, {'error': 'SENHA_INCORRETA', 'message': 'A senha fornecida está incorreta'}, origin)
+                return create_response(401, {'error': 'SENHA_INCORRETA', 'message': 'A senha fornecida está incorreta'})
             except Exception as e:
                 error_details = traceback.format_exc()
                 logger.error(json.dumps({
@@ -158,7 +123,7 @@ def lambda_handler(event, context):
                     'error': 'ERRO_PROCESSAMENTO',
                     'message': f'Erro ao processar o arquivo PDF: {str(e)}',
                     'details': error_details
-                }, origin)
+                })
             
             with open(temp_output_path, 'rb') as f:
                 processed_pdf = base64.b64encode(f.read()).decode('utf-8')
@@ -173,7 +138,7 @@ def lambda_handler(event, context):
         return create_response(200, {
             'message': 'Senha removida com sucesso',
             'pdfBase64': processed_pdf
-        }, origin)
+        })
         
     except Exception as e:
         process_time = time.time() - start_time
@@ -189,16 +154,12 @@ def lambda_handler(event, context):
             'error': 'ERRO_INTERNO',
             'message': f'Erro interno do servidor: {str(e)}',
             'details': error_details
-        }, origin)
+        })
 
-def create_response(status_code, body, origin='*'):
-    cors_headers = CORS_HEADERS.copy()
-    cors_headers['Access-Control-Allow-Origin'] = origin
-    cors_headers['Content-Type'] = CONFIG['CONTENT_TYPE']
-    
+def create_response(status_code, body):
     return {
         'statusCode': status_code,
-        'headers': cors_headers,
+        'headers': {'Content-Type': CONFIG['CONTENT_TYPE']},
         'body': json.dumps(body)
     }
 
