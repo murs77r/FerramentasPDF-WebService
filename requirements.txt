@@ -1,2 +1,4 @@
-Flask
+flask
+gunicorn
+PyPDF2
 pikepdf

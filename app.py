@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from pdf_service import PDFService
 import logging
+import os
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -40,5 +41,14 @@ def remove_pdf_password():
         logger.error(f"Erro interno: {str(e)}")
         return jsonify({"error": f"Erro interno do servidor: {str(e)}"}), 500
 
+@app.route('/', methods=['GET'])
+def health_check():
+    """
+    Endpoint para verificação de saúde do servidor
+    """
+    return jsonify({"status": "ok", "message": "Serviço de remoção de senha de PDF está funcionando"})
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Usar variáveis de ambiente para porta e host, com valores padrão
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
