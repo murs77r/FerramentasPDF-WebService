@@ -111,7 +111,7 @@ def get_status_html():
             }
             footer {
                 text-align: center;
-                margin-top: 30px;
+                margin-top: 45px;
                 color: #757575;
                 font-size: 0.9em;
             }
