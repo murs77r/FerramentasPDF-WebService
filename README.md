@@ -13,9 +13,9 @@ Este repositório contém um serviço web para remoção de proteção por senha
 ## 🔌 Endpoints da API
 
 1. **Verificação de Saúde (Health Check)**
-   - **URL:** `/`
+   - **URL:** `/` ou qualquer outra requisição que não seja explícitamente `POST`.
    - **Método:** `GET`
-   - **Resposta:** Status do serviço
+   - **Resposta:** Status de Serviço
 
 2. **Remoção de Senha de PDF**
    - **URL:** `/remove-pdf-password`
