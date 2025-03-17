@@ -90,6 +90,136 @@ def pdf_to_image():
 
 @app.route('/', methods=['GET'])
 def health_check():
+    # Verifica se o cliente aceita HTML (navegadores)
+    if 'text/html' in request.headers.get('Accept', ''):
+        html = '''
+        <!DOCTYPE html>
+        <html lang="pt-br">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Status do Serviço | 📊</title>
+            <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+            <link rel="icon" type="image/png" href="https://i.ibb.co/MMdSHDp/financa.png">
+            <style>
+                body {
+                    font-family: 'Nunito', sans-serif;
+                    background-color: #121212;
+                    color: #e0e0e0;
+                    margin: 0;
+                    padding: 20px;
+                    display: flex;
+                    justify-content: center;
+                }
+                .container {
+                    max-width: 800px;
+                    width: 100%;
+                    border-radius: 8px;
+                    height: max-content;
+                    padding: 20px;
+                    margin: auto 0;
+                }
+                h1 {
+                    color: #4caf50;
+                    text-align: center;
+                    margin-bottom: 30px;
+                    font-weight: 1000;
+                    margin-top: 0px;
+                    margin-bottom: 45px;
+                }
+                h2 {
+                    margin: 0;
+                }
+                .status-card {
+                    background-color: #2d2d2d;
+                    border-left: 4px solid #4caf50;
+                    padding: 30px 30px 30px 30px;
+                    border-radius: 4px;
+                    margin-bottom: 20px;
+                }
+                .status-card p {
+                    margin-bottom: 0px;
+                }
+                .endpoint-list {
+                    list-style-type: none;
+                    padding: 0;
+                    display: grid;
+                    gap: 15px;
+                }
+                .endpoint-item {
+                    background-color: #2d2d2d;
+                    padding: 20px 20px 20px 30px;
+                    border-radius: 4px;
+                    border-left: 4px solid #2196f3;
+                }
+                .endpoint-url {
+                    font-weight: bold;
+                    color: #2196f3;
+                }
+                .endpoint-p {
+                    margin-bottom: 0px;
+                }
+                .method {
+                    display: inline-block;
+                    padding: 3px 6px;
+                    background-color: #2196f3;
+                    color: white;
+                    border-radius: 3px;
+                    font-size: 0.8em;
+                    margin-right: 10px;
+                }
+                footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    color: #757575;
+                    font-size: 0.9em;
+                }
+                footer p {
+                    margin: 0px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>STATUS DE SERVIÇO</h1>
+                
+                <div class="status-card">
+                    <h2>Status: <span style="color: #4caf50;">ONLINE</span></h2>
+                    <p>Os serviços disponíveis na API estão funcionando, conforme descritos abaixo.</p>
+                </div>
+                
+                <ul class="endpoint-list">
+                    <li class="endpoint-item">
+                        <span class="method">POST</span>
+                        <span class="endpoint-url">/remove-pdf-password</span>
+                        <p class="endpoint-p">Remove a senha de um arquivo PDF protegido.</p>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="method">POST</span>
+                        <span class="endpoint-url">/pdf-to-image</span>
+                        <p class="endpoint-p">Converte um arquivo PDF para imagem.</p>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="method">GET</span>
+                        <span class="endpoint-url">/</span>
+                        <p class="endpoint-p">Verifica o status do serviço (esta página).</p>
+                    </li>
+                </ul>
+                
+                <footer>
+                    <p class="mb-0">Por Murilo Souza Ramos &copy; <span id="currentYear"></span></p>
+                </footer>
+            </div>
+        <script>
+            const currentYear = document.getElementById('currentYear');
+            currentYear.textContent = new Date().getFullYear();
+        </script>
+        </body>
+        </html>
+        '''
+        return html
+    
+    # Retorno padrão em JSON para API
     return jsonify({"status": "ok", "message": "Serviço de remoção de senha de PDF está funcionando"})
 
 if __name__ == '__main__':
