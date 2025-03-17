@@ -1,4 +1,4 @@
-# 🔓 Removedor de Senha PDF com FLASK/PikePDF
+# 🔓 Ferramentas PDF para PYTHON 🐍
 
 Este repositório contém um serviço web para remoção de proteção por senha de arquivos PDF. O serviço recebe arquivos em formato Base64, remove a senha de proteção e retorna o PDF desbloqueado.
 
