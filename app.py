@@ -47,7 +47,6 @@ def get_status_html():
                 font-family: 'Nunito', sans-serif;
                 background-color: #121212;
                 color: #e0e0e0;
-                padding: 20px;
                 display: flex;
                 justify-content: center;
                 box-sizing: border-box;
