@@ -5,3 +5,4 @@ pikepdf
 flask-cors
 PyMuPDF
 pillow
+python-dotenv
