@@ -4,6 +4,9 @@ import logging
 import os
 import sys
 import traceback
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -24,8 +27,10 @@ except ImportError as e:
     logger.critical(f"Erro ao importar módulo pdf_service: {str(e)}")
     sys.exit(1)
 
+site = os.getenv("SITE")
+
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://pdf.class-one.com.br"}})
+CORS(app, resources={r"/*": {"origins": site}})
 
 def get_status_html():
     return '''
